@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: excel-formatter
+    env: node
+    buildCommand: npm install --omit=dev
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
