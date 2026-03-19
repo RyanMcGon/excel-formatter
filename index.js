@@ -167,14 +167,26 @@ app.post('/generate-excel', async (req, res) => {
     const dataHeaderRow = dataHeaderExcelRow.number;
 
 
+    const totalRowFill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD9E1F2' }, // light blue-grey, same as header
+    };
+
     // Add data rows
     rows.forEach((row) => {
+      const isTotal = row._total === true;
       const values = headers.map((h) => {
         const v = row[h];
         return v !== undefined && v !== null ? v : '';
       });
 
       const excelRow = worksheet.addRow(values);
+
+      if (isTotal) {
+        excelRow.font = { bold: true };
+        excelRow.eachCell({ includeEmpty: true }, (cell) => { cell.fill = totalRowFill; });
+      }
 
       // Format numeric cells as currency; enable wrap text for long strings
       excelRow.eachCell({ includeEmpty: true }, (cell) => {
