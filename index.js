@@ -165,13 +165,17 @@ app.post('/generate-excel', async (req, res) => {
 
       const excelRow = worksheet.addRow(values);
 
-      // Enable wrap text for cells with longer content
+      // Format numeric cells as currency; enable wrap text for long strings
       excelRow.eachCell({ includeEmpty: true }, (cell) => {
-        const strVal = cell.value !== null && cell.value !== undefined
-          ? String(cell.value)
-          : '';
-        if (strVal.length > WRAP_TEXT_THRESHOLD) {
-          cell.alignment = { wrapText: true, vertical: 'top' };
+        if (typeof cell.value === 'number') {
+          cell.numFmt = '$#,##0.00';
+        } else {
+          const strVal = cell.value !== null && cell.value !== undefined
+            ? String(cell.value)
+            : '';
+          if (strVal.length > WRAP_TEXT_THRESHOLD) {
+            cell.alignment = { wrapText: true, vertical: 'top' };
+          }
         }
       });
     });
