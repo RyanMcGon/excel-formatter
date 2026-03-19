@@ -31,7 +31,7 @@ app.get('/health', (_req, res) => {
 
 app.post('/generate-excel', async (req, res) => {
   const start = Date.now();
-  const { rows, fileName = 'salesforce_report.xlsx', sheetName = 'Report' } = req.body || {};
+  const { rows, fileName = 'salesforce_report.xlsx', sheetName = 'Report', title, subtitle } = req.body || {};
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -104,24 +104,56 @@ app.post('/generate-excel', async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(safeName);
 
+    // ── Optional title/subtitle header block ─────────────────────────────────
+    // If a title (or subtitle) is provided, insert rows above the data header.
+    // headerOffset tracks how many rows were prepended so we can shift the
+    // freeze pane and autofilter down accordingly.
+
+    let headerOffset = 0;
+
+    if (title || subtitle) {
+      const colCount = headers.length;
+
+      if (title) {
+        const titleRow = worksheet.addRow([String(title)]);
+        worksheet.mergeCells(titleRow.number, 1, titleRow.number, colCount);
+        titleRow.getCell(1).font = { bold: true, size: 13 };
+        titleRow.getCell(1).alignment = { vertical: 'middle' };
+        titleRow.height = 20;
+        headerOffset += 1;
+      }
+
+      if (subtitle) {
+        const subtitleRow = worksheet.addRow([String(subtitle)]);
+        worksheet.mergeCells(subtitleRow.number, 1, subtitleRow.number, colCount);
+        subtitleRow.getCell(1).font = { size: 10, italic: true };
+        subtitleRow.getCell(1).alignment = { vertical: 'middle' };
+        headerOffset += 1;
+      }
+    }
+
     // Define columns — ExcelJS writes the header row automatically when
-    // `header` is provided. Data rows begin at row 2.
+    // `header` is provided. Data rows begin at row (headerOffset + 2).
     worksheet.columns = headers.map((h) => ({
       header: h,
       key: h,
       width: MIN_COL_WIDTH,
     }));
 
-    // Bold header row (row 1)
-    worksheet.getRow(1).font = { bold: true };
+    const dataHeaderRow = headerOffset + 1;
 
-    // Freeze the top row so it stays visible while scrolling
-    worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2' }];
+    // Bold header row
+    worksheet.getRow(dataHeaderRow).font = { bold: true };
+
+    // Freeze pane below the header row (and below any title rows)
+    const firstDataRow = dataHeaderRow + 1;
+    const firstDataCell = `A${firstDataRow}`;
+    worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: dataHeaderRow, topLeftCell: firstDataCell }];
 
     // Autofilter across all header columns
     worksheet.autoFilter = {
-      from: { row: 1, column: 1 },
-      to: { row: 1, column: headers.length },
+      from: { row: dataHeaderRow, column: 1 },
+      to: { row: dataHeaderRow, column: headers.length },
     };
 
     // Add data rows
