@@ -138,6 +138,11 @@ app.post('/generate-excel', async (req, res) => {
         subtitleRow.getCell(1).fill = headerFill;
         headerOffset += 1;
       }
+
+      // 2 blank spacer rows between title block and column headers
+      worksheet.addRow([]);
+      worksheet.addRow([]);
+      headerOffset += 2;
     }
 
     // Define columns without `header` — setting `header` here would overwrite
@@ -148,8 +153,16 @@ app.post('/generate-excel', async (req, res) => {
     }));
 
     // Manually add the column header row so it lands after any title rows
+    const colHeaderFill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD9E1F2' }, // light blue-grey
+    };
     const dataHeaderExcelRow = worksheet.addRow(headers);
     dataHeaderExcelRow.font = { bold: true };
+    dataHeaderExcelRow.eachCell({ includeEmpty: true }, (cell) => {
+      cell.fill = colHeaderFill;
+    });
 
     const dataHeaderRow = dataHeaderExcelRow.number;
 
