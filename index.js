@@ -60,6 +60,7 @@ app.post('/generate-excel', async (req, res) => {
 
   rows.forEach((row) => {
     Object.keys(row).forEach((k) => {
+      if (k === '_total') return; // internal flag, not a column
       if (!seenKeys.has(k)) {
         seenKeys.add(k);
         extraKeys.push(k);
@@ -67,7 +68,7 @@ app.post('/generate-excel', async (req, res) => {
     });
   });
 
-  const allRowKeys = new Set(rows.flatMap((r) => Object.keys(r)));
+  const allRowKeys = new Set(rows.flatMap((r) => Object.keys(r).filter((k) => k !== '_total')));
   const headers = [
     ...PRIORITY_HEADERS.filter((h) => allRowKeys.has(h)),
     ...extraKeys,
