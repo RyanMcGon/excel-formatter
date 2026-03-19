@@ -153,11 +153,6 @@ app.post('/generate-excel', async (req, res) => {
 
     const dataHeaderRow = dataHeaderExcelRow.number;
 
-    // Autofilter across all header columns
-    worksheet.autoFilter = {
-      from: { row: dataHeaderRow, column: 1 },
-      to: { row: dataHeaderRow, column: headers.length },
-    };
 
     // Add data rows
     rows.forEach((row) => {
