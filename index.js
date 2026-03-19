@@ -140,23 +140,18 @@ app.post('/generate-excel', async (req, res) => {
       }
     }
 
-    // Define columns — ExcelJS writes the header row automatically when
-    // `header` is provided. Data rows begin at row (headerOffset + 2).
+    // Define columns without `header` — setting `header` here would overwrite
+    // row 1 (the title row). We add the header row manually below instead.
     worksheet.columns = headers.map((h) => ({
-      header: h,
       key: h,
       width: MIN_COL_WIDTH,
     }));
 
-    const dataHeaderRow = headerOffset + 1;
+    // Manually add the column header row so it lands after any title rows
+    const dataHeaderExcelRow = worksheet.addRow(headers);
+    dataHeaderExcelRow.font = { bold: true };
 
-    // Bold header row
-    worksheet.getRow(dataHeaderRow).font = { bold: true };
-
-    // Freeze pane below the header row (and below any title rows)
-    const firstDataRow = dataHeaderRow + 1;
-    const firstDataCell = `A${firstDataRow}`;
-    worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: dataHeaderRow, topLeftCell: firstDataCell }];
+    const dataHeaderRow = dataHeaderExcelRow.number;
 
     // Autofilter across all header columns
     worksheet.autoFilter = {
@@ -195,6 +190,8 @@ app.post('/generate-excel', async (req, res) => {
       let maxLen = 0;
 
       column.eachCell({ includeEmpty: false }, (cell) => {
+        // Skip merged title/subtitle rows — their text would inflate column 1
+        if (cell.row <= headerOffset) return;
         const len = cell.value !== null && cell.value !== undefined
           ? String(cell.value).length
           : 0;
