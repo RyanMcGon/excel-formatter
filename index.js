@@ -114,11 +114,18 @@ app.post('/generate-excel', async (req, res) => {
     if (title || subtitle) {
       const colCount = headers.length;
 
+      const headerFill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD9E1F2' }, // light blue-grey
+      };
+
       if (title) {
         const titleRow = worksheet.addRow([String(title)]);
         worksheet.mergeCells(titleRow.number, 1, titleRow.number, colCount);
         titleRow.getCell(1).font = { bold: true, size: 13 };
         titleRow.getCell(1).alignment = { vertical: 'middle' };
+        titleRow.getCell(1).fill = headerFill;
         titleRow.height = 20;
         headerOffset += 1;
       }
@@ -128,6 +135,7 @@ app.post('/generate-excel', async (req, res) => {
         worksheet.mergeCells(subtitleRow.number, 1, subtitleRow.number, colCount);
         subtitleRow.getCell(1).font = { size: 10, italic: true };
         subtitleRow.getCell(1).alignment = { vertical: 'middle' };
+        subtitleRow.getCell(1).fill = headerFill;
         headerOffset += 1;
       }
     }
